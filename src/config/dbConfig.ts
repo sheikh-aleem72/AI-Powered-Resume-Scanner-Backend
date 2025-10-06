@@ -1,12 +1,12 @@
 import mongoose from 'mongoose';
-import { DB_URL } from './serverConfig';
+import { env } from './serverConfig';
 
 export default async function connectDatabase() {
-  if (!DB_URL) {
+  if (!env.DB_URL) {
     throw new Error('MONGO_URL is Required in .env');
   }
   try {
-    await mongoose.connect(DB_URL);
+    await mongoose.connect(env.DB_URL);
     console.log('Successfully connected to Database ✅');
   } catch (error) {
     console.error('Error while connecting to database ❌', error);
