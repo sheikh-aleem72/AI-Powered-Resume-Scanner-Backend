@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction, ErrorRequestHandler } from 'express';
+import { ErrorRequestHandler } from 'express';
 import { AppError } from '../utils/AppErrors';
 
 export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {

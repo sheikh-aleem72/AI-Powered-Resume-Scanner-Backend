@@ -4,7 +4,10 @@ dotenv.config();
 interface EnvConfig {
   PORT: number;
   DB_URL: string;
-  JWT_SECRET: string;
+  JWT_ACCESS_SECRET: string;
+  JWT_REFRESH_SECRET: string;
+  JWT_ACCESS_EXPIRES_IN: string;
+  JWT_REFRESH_EXPIRES_IN: string;
 }
 
 const getEnvVar = (key: string): string => {
@@ -16,5 +19,8 @@ const getEnvVar = (key: string): string => {
 export const env: EnvConfig = {
   PORT: Number(getEnvVar('PORT')),
   DB_URL: getEnvVar('DB_URL'),
-  JWT_SECRET: getEnvVar('JWT_SECRET'),
+  JWT_ACCESS_SECRET: getEnvVar('JWT_ACCESS_SECRET'),
+  JWT_REFRESH_SECRET: getEnvVar('JWT_REFRESH_SECRET'),
+  JWT_REFRESH_EXPIRES_IN: getEnvVar('JWT_REFRESH_EXPIRES_IN'),
+  JWT_ACCESS_EXPIRES_IN: getEnvVar('JWT_ACCESS_EXPIRES_IN'),
 };
