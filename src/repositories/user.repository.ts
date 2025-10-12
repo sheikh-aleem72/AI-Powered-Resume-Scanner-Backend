@@ -7,6 +7,11 @@ export const createUser = async (userData: Partial<IUser>): Promise<HydratedDocu
   return user;
 };
 
+export const findUserById = async (userId: string): Promise<HydratedDocument<IUser> | null> => {
+  const user = await User.findById(userId);
+  return user;
+};
+
 export const findUserByEmail = async (email: string): Promise<HydratedDocument<IUser> | null> => {
   return User.findOne({ email });
 };

@@ -1,6 +1,6 @@
 import { IUser } from '../schema/User';
-import { createUser, findUserByEmail } from '../repositories/user.repository';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
+import { createUser, findUserByEmail, findUserById } from '../repositories/user.repository';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { HydratedDocument } from 'mongoose';
 import { AppError } from '../utils/AppErrors';
 
@@ -8,6 +8,11 @@ export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
   user: Pick<IUser, 'id' | 'name' | 'email' | 'role' | 'organization' | 'premium'>;
+}
+
+interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export const signupService = async (
@@ -82,5 +87,40 @@ export const signinService = async (email: string, password: string): Promise<Au
       organization: user.organization || '',
       premium: user.premium,
     },
+  };
+};
+
+export const refreshTokenService = async (refreshToken: string): Promise<RefreshTokenResponse> => {
+  if (!refreshToken) throw new AppError('Refresh token is required', 401);
+
+  // 1️⃣ Verify the refresh token
+  const decoded = verifyRefreshToken(refreshToken);
+
+  // If token verification fails, it’s either expired or invalid
+  if (!decoded) {
+    // JWT verify fails for expired token as well, so you might want to differentiate
+    throw new AppError('Refresh token expired or invalid. Please login again.', 401);
+  }
+
+  // 2️⃣ Find user in DB
+  const user = await findUserById(decoded.userId);
+  if (!user) throw new AppError('User not found', 404);
+
+  // 3️⃣ Check if token matches the stored one
+  if (user.refreshToken !== refreshToken) {
+    throw new AppError('Invalid refresh token', 403);
+  }
+
+  // 4️⃣ Generate new access token
+  const newAccessToken = generateAccessToken(user._id.toString());
+
+  // Optional: rotate refresh token for extra security
+  const newRefreshToken = generateRefreshToken(user._id.toString());
+  user.refreshToken = newRefreshToken;
+  await user.save();
+
+  return {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
   };
 };

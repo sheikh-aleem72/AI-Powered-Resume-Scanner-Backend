@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { signinService, signupService } from '../services/auth.service';
+import { refreshTokenService, signinService, signupService } from '../services/auth.service';
 import { AppError } from '../utils/AppErrors';
 
 export const signupController = async (req: Request, res: Response) => {
@@ -58,6 +58,29 @@ export const signinController = async (req: Request, res: Response) => {
     return res.status(500).json({
       status: 'error',
       message: 'Something went wrong on our side',
+    });
+  }
+};
+
+export const refreshTokenController = async (req: Request, res: Response) => {
+  try {
+    const { refreshToken } = req.body;
+
+    if (!refreshToken) {
+      throw new AppError('Refresh token is required', 401);
+    }
+
+    const tokens = await refreshTokenService(refreshToken);
+
+    res.status(200).json({
+      success: true,
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+    });
+  } catch (error: any) {
+    res.status(error.statusCode || 500).json({
+      success: false,
+      message: error.message || 'Something went wrong',
     });
   }
 };

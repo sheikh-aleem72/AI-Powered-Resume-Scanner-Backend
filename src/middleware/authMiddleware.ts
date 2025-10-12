@@ -1,6 +1,12 @@
 import { Request as ExRequest, Response, NextFunction } from 'express';
-import { verifyAccessToken } from '../utils/jwt';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+} from '../utils/jwt';
 import { AppError } from '../utils/AppErrors';
+import { findUserById } from '../repositories/user.repository';
 
 interface AuthRequest extends ExRequest {
   user?: {
@@ -8,9 +14,9 @@ interface AuthRequest extends ExRequest {
   };
 }
 
-export const authMiddleware = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    // 1️⃣ Get token from Authorization header
+    // Get token from Authorization header
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       throw new AppError('No token provided', 401);
@@ -18,16 +24,42 @@ export const authMiddleware = (req: AuthRequest, res: Response, next: NextFuncti
 
     const token = authHeader.split(' ')[1]; // Extract token
 
-    // 2️⃣ Verify token
-    const decoded = verifyAccessToken(token!);
+    // 1️⃣ Verify access token
+    let decoded = verifyAccessToken(token!);
+
     if (!decoded) {
-      throw new AppError('Invalid or expired token', 401);
+      // Access token invalid or expired, try refresh token
+      const refreshToken = req.headers['x-refresh-token'] as string | undefined;
+
+      if (!refreshToken) {
+        throw new AppError('Refresh token expired!. Please login again.', 401);
+      }
+
+      // 2️⃣ Verify refresh token
+      const decodedRefresh = verifyRefreshToken(refreshToken);
+      if (!decodedRefresh) {
+        throw new AppError('Refresh token expired or invalid. Please login again.', 401);
+      }
+
+      // 3️⃣ Find user in DB
+      const user = await findUserById(decodedRefresh.userId);
+      if (!user || user.refreshToken !== refreshToken) {
+        throw new AppError('Invalid refresh token. Please login again.', 403);
+      }
+
+      // 4️⃣ Generate new access token
+      const newAccessToken = generateAccessToken(user._id.toString());
+
+      // 5️⃣ Attach new access token in response headers
+      res.setHeader('x-access-token', newAccessToken);
+
+      // 6️⃣ Set decoded for request
+      decoded = { userId: user._id.toString() };
     }
 
-    // 3️⃣ Attach user to request
+    // 7️⃣ Attach user info to request (basic)
     req.user = { id: decoded.userId };
 
-    // 4️⃣ Proceed
     next();
   } catch (error: any) {
     res.status(error.statusCode || 401).json({
