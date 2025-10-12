@@ -2,6 +2,7 @@ import { IUser } from '../schema/User';
 import { createUser, findUserByEmail } from '../repositories/user.repository';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt';
 import { HydratedDocument } from 'mongoose';
+import { AppError } from '../utils/AppErrors';
 
 export interface AuthResponse {
   accessToken: string;
@@ -48,6 +49,38 @@ export const signupService = async (
       role: newUser.role,
       organization: newUser.organization || '',
       premium: newUser.premium,
+    },
+  };
+};
+
+export const signinService = async (email: string, password: string): Promise<AuthResponse> => {
+  // 1️⃣ Find user by email
+  const user = await findUserByEmail(email);
+  if (!user) throw new AppError('Invalid email or password', 401);
+
+  // 2️⃣ Compare password
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) throw new AppError('Invalid email or password', 401);
+
+  // 3️⃣ Generate tokens
+  const refreshToken = generateRefreshToken(user._id.toString());
+  const accessToken = generateAccessToken(user._id.toString());
+
+  // 4️⃣ Save refresh token
+  user.refreshToken = refreshToken;
+  await user.save();
+
+  // 5️⃣ Return tokens + user info
+  return {
+    refreshToken,
+    accessToken,
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      organization: user.organization || '',
+      premium: user.premium,
     },
   };
 };
