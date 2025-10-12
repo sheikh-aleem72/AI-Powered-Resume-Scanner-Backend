@@ -10,7 +10,8 @@
     "module": "commonjs",
     "moduleResolution": "node",
     "target": "es2022",
-    "types": [],
+    "types": ["node"], // <- include node types so TS knows about Node environment
+
     // For nodejs:
     // "lib": ["esnext"],
     // "types": ["node"],
@@ -42,6 +43,6 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+    "forceConsistentCasingInFileNames": true
   }
 }
