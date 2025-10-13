@@ -1,4 +1,4 @@
-import { IUser } from '../schema/User';
+import { IUser } from '../schema/user.model';
 import { createUser, findUserByEmail, findUserById } from '../repositories/user.repository';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { HydratedDocument } from 'mongoose';

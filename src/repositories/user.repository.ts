@@ -1,4 +1,4 @@
-import { IUser, User } from '../schema/User';
+import { IUser, User } from '../schema/user.model';
 import { HydratedDocument } from 'mongoose';
 
 export const createUser = async (userData: Partial<IUser>): Promise<HydratedDocument<IUser>> => {
