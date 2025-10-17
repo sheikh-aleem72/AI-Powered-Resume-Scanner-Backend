@@ -1,7 +1,7 @@
 import { ErrorRequestHandler } from 'express';
 import { AppError } from '../utils/AppErrors';
 
-export const errorHandler: ErrorRequestHandler = (err, req, res, _next) => {
+export const errorHandler: ErrorRequestHandler = (err, req, res) => {
   console.error('❌ Error:', err);
 
   if (err instanceof AppError) {

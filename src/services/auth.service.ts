@@ -3,6 +3,14 @@ import { createUser, findUserByEmail, findUserById } from '../repositories/user.
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt';
 import { HydratedDocument } from 'mongoose';
 import { AppError } from '../utils/AppErrors';
+import { sendOtpEmail } from '../utils/sendEmail';
+import {
+  createPending,
+  deletePendingByEmailAndPurpose,
+} from '../repositories/pendingVerification.repository';
+import { env } from '../config/serverConfig';
+import { generateOtp, hashOtp } from '../utils/otp';
+import { hash as bcryptHash } from 'bcryptjs';
 
 export interface AuthResponse {
   accessToken: string;
@@ -123,4 +131,50 @@ export const refreshTokenService = async (refreshToken: string): Promise<Refresh
     accessToken: newAccessToken,
     refreshToken: newRefreshToken,
   };
+};
+
+export const requestOtpService = async (
+  email: string,
+  password: string | null,
+  username: string | null,
+  purpose: 'signup' | 'reset',
+) => {
+  // If purpose signup and user exists, reject (no duplicates)
+  if (purpose === 'signup') {
+    const existing = await findUserByEmail(email);
+    if (existing) throw new AppError('Email already registered', 400);
+    if (!username || !password)
+      throw new AppError('username and password required for signup', 400);
+  } else {
+    // reset: ensure user exists
+    const existing = await findUserByEmail(email);
+    if (!existing) throw new AppError('No account found with this email', 404);
+  }
+
+  // Remove any previous pending for the same email+purpose (so OTP rotates)
+  await deletePendingByEmailAndPurpose(email, purpose);
+
+  // Generate OTP and hashes
+  const otp = generateOtp();
+  const otpHash = await hashOtp(otp);
+
+  // For signup, hash the password so we don't store plaintext in pending
+  const hashedPassword = password ? await bcryptHash(password, 10) : null;
+
+  const expiresMinutes = Number(env.OTP_EXPIRES_MINUTES || 5);
+  const otpExpiresAt = new Date(Date.now() + expiresMinutes * 60 * 1000);
+
+  await createPending({
+    email,
+    username: username || null,
+    hashedPassword,
+    otpHash,
+    purpose,
+    otpExpiresAt,
+  });
+
+  // Send email (do not include sensitive info)
+  await sendOtpEmail(email, otp, purpose);
+
+  return { success: true, message: 'OTP sent to email' };
 };
