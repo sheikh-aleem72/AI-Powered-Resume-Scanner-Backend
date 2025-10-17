@@ -4,6 +4,7 @@ import {
   requestOtpService,
   signinService,
   signupService,
+  verifyOtpService,
 } from '../services/auth.service';
 import { AppError } from '../utils/AppErrors';
 
@@ -106,6 +107,29 @@ export const requestOtpController = async (req: Request, res: Response) => {
 
     const response = await requestOtpService(email, password, username, purpose);
     return res.status(200).json(response);
+  } catch (error) {
+    // ✅ Handle operational (AppError) errors gracefully
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+
+    // ❌ Handle unexpected errors
+    console.error('Error in requestOtpController:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong on our side',
+    });
+  }
+};
+
+export const verifyOtpController = async (req: Request, res: Response) => {
+  try {
+    const { email, otp, purpose, newPassword } = req.body;
+    const response = await verifyOtpService({ email, otp, purpose, newPassword });
+    return res.status(response.accessToken ? 201 : 200).json(response);
   } catch (error) {
     // ✅ Handle operational (AppError) errors gracefully
     if (error instanceof AppError) {

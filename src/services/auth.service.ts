@@ -7,9 +7,10 @@ import { sendOtpEmail } from '../utils/sendEmail';
 import {
   createPending,
   deletePendingByEmailAndPurpose,
+  findPendingByEmailAndPurpose,
 } from '../repositories/pendingVerification.repository';
 import { env } from '../config/serverConfig';
-import { generateOtp, hashOtp } from '../utils/otp';
+import { generateOtp, hashOtp, verifyOtpHash } from '../utils/otp';
 import { hash as bcryptHash } from 'bcryptjs';
 
 export interface AuthResponse {
@@ -177,4 +178,71 @@ export const requestOtpService = async (
   await sendOtpEmail(email, otp, purpose);
 
   return { success: true, message: 'OTP sent to email' };
+};
+
+export const verifyOtpService = async ({
+  email,
+  otp,
+  purpose,
+  newPassword,
+}: {
+  email: string;
+  otp: string;
+  purpose: 'signup' | 'reset';
+  newPassword?: string;
+}) => {
+  const pending = await findPendingByEmailAndPurpose(email, purpose);
+  if (!pending) throw new AppError('No pending verification found', 400);
+
+  if (pending.otpExpiresAt.getTime() < Date.now()) {
+    await deletePendingByEmailAndPurpose(email, purpose);
+    throw new AppError('OTP expired. Please request a new one.', 401);
+  }
+
+  const isValid = await verifyOtpHash(otp, pending.otpHash);
+  if (!isValid) throw new AppError('Invalid OTP', 400);
+
+  if (purpose === 'signup') {
+    if (!pending.username || !pending.hashedPassword) {
+      await deletePendingByEmailAndPurpose(email, 'signup');
+      throw new AppError('Incomplete signup data. Please request signup again.', 400);
+    }
+
+    const newUser = await createUser({
+      name: pending.username,
+      email: pending.email,
+      password: pending.hashedPassword,
+    } as IUser);
+
+    await deletePendingByEmailAndPurpose(email, 'signup');
+
+    const accessToken = generateAccessToken(newUser._id.toString());
+    const refreshToken = generateRefreshToken(newUser._id.toString());
+    newUser.refreshToken = refreshToken;
+    await newUser.save();
+
+    return {
+      success: true,
+      message: 'Email verified and account created',
+      accessToken,
+      refreshToken,
+      user: {
+        id: newUser._id.toString(),
+        name: newUser.name,
+        email: newUser.email,
+      },
+    };
+  } else {
+    if (!newPassword) throw new AppError('newPassword is required for reset', 400);
+
+    const user = await findUserByEmail(email);
+    if (!user) throw new AppError('User not found', 404);
+
+    user.password = await bcryptHash(newPassword, 10);
+    await user.save();
+
+    await deletePendingByEmailAndPurpose(email, 'reset');
+
+    return { success: true, message: 'Password reset successful' };
+  }
 };

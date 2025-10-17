@@ -12,3 +12,17 @@ export const signinSchema = z.object({
 });
 
 export type signupInput = z.infer<typeof signupSchema>;
+
+export const requestOtpSchema = z.object({
+  email: z.string().email(),
+  username: z.string().optional(),
+  password: z.string().min(6).optional(),
+  purpose: z.enum(['signup', 'reset']),
+});
+
+export const verifyOtpSchema = z.object({
+  email: z.string().email(),
+  otp: z.string().length(6),
+  purpose: z.enum(['signup', 'reset']),
+  newPassword: z.string().min(6).optional(), // for reset flow
+});

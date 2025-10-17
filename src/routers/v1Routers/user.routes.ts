@@ -1,10 +1,17 @@
 import express from 'express';
 import { validateRequest } from '../../middleware/validateRequest';
-import { signinSchema, signupSchema } from '../../validators/userValidator';
+import {
+  requestOtpSchema,
+  signinSchema,
+  signupSchema,
+  verifyOtpSchema,
+} from '../../validators/userValidator';
 import {
   refreshTokenController,
+  requestOtpController,
   signinController,
   signupController,
+  verifyOtpController,
 } from '../../controllers/auth.controller';
 import { authMiddleware } from '../../middleware/authMiddleware';
 
@@ -23,5 +30,9 @@ router.get('/profile', authMiddleware, (req, res) => {
 });
 
 router.post('/refresh-token', refreshTokenController);
+
+router.post('/request-otp', validateRequest(requestOtpSchema), requestOtpController);
+
+router.post('/verify-otp', validateRequest(verifyOtpSchema), verifyOtpController);
 
 export default router;
