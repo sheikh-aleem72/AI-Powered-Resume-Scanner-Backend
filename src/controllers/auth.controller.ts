@@ -72,15 +72,25 @@ export const refreshTokenController = async (req: Request, res: Response) => {
 
     const tokens = await refreshTokenService(refreshToken);
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       accessToken: tokens.accessToken,
       refreshToken: tokens.refreshToken,
     });
-  } catch (error: any) {
-    res.status(error.statusCode || 500).json({
-      success: false,
-      message: error.message || 'Something went wrong',
+  } catch (error) {
+    // ✅ Handle operational (AppError) errors gracefully
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+
+    // ❌ Handle unexpected errors
+    console.error('Error in refreshTokenController:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong on our side',
     });
   }
 };

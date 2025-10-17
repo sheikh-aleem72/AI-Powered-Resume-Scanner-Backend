@@ -1,10 +1,5 @@
 import { Request as ExRequest, Response, NextFunction } from 'express';
-import {
-  generateAccessToken,
-  generateRefreshToken,
-  verifyAccessToken,
-  verifyRefreshToken,
-} from '../utils/jwt';
+import { generateAccessToken, verifyAccessToken, verifyRefreshToken } from '../utils/jwt';
 import { AppError } from '../utils/AppErrors';
 import { findUserById } from '../repositories/user.repository';
 
@@ -61,10 +56,20 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
     req.user = { id: decoded.userId };
 
     next();
-  } catch (error: any) {
-    res.status(error.statusCode || 401).json({
-      success: false,
-      message: error.message || 'Unauthorized',
+  } catch (error) {
+    // ✅ Handle operational (AppError) errors gracefully
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+
+    // ❌ Handle unexpected errors
+    console.error('Error in authMiddleware:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong on our side',
     });
   }
 };

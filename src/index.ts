@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express from 'express';
 import connectDatabase from './config/dbConfig';
 import { env } from './config/serverConfig';
 import { errorHandler } from './middleware/errorMiddleware';
