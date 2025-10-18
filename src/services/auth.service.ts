@@ -12,6 +12,7 @@ import {
 import { env } from '../config/serverConfig';
 import { generateOtp, hashOtp, verifyOtpHash } from '../utils/otp';
 import { hash as bcryptHash } from 'bcryptjs';
+import { IPendingVerification } from '../schema/pendingVerification.model';
 
 export interface AuthResponse {
   accessToken: string;
@@ -24,47 +25,45 @@ interface RefreshTokenResponse {
   refreshToken: string;
 }
 
+/**
+ * Signup Service
+ * The signup flow is shift to email-based otp verification.
+ * Flow: signup request -> request otp -> create pendingVerification -> verify otp -> create real user
+ */
 export const signupService = async (
   name: string,
   email: string,
   password: string,
   organization?: string,
-): Promise<AuthResponse> => {
+) => {
   // 1️⃣ Check if user exists
   const existingUser: HydratedDocument<IUser> | null = await findUserByEmail(email);
   if (existingUser) throw new Error('User already exists');
 
-  // 2️⃣ Create user
-  const newUser: HydratedDocument<IUser> = await createUser({
-    name,
+  // Create otp
+  const { otp, otpHash, otpExpiresAt } = await requestOtpService(email, 'signup');
+  if (!otpHash || !otpExpiresAt || !otp) {
+    throw new Error('Failed to generate otp');
+  }
+
+  // For signup, hash the password so we don't store plaintext in pending
+  const hashedPassword = password ? await bcryptHash(password, 10) : null;
+
+  // Create pending verification for user
+  await createPending({
     email,
-    password,
-    role: 'recruiter',
-    premium: false,
-    organization: organization || '',
+    name: name || null,
+    hashedPassword,
+    organization: organization || null,
+    purpose: 'signup',
+    otpHash,
+    otpExpiresAt,
   });
 
-  // 3️⃣ Generate tokens
-  const accessToken = generateAccessToken(newUser._id.toString());
-  const refreshToken = generateRefreshToken(newUser._id.toString());
+  // Send email (do not include sensitive info)
+  await sendOtpEmail(email, otp, 'signup');
 
-  // 4️⃣ Save refresh token
-  newUser.refreshToken = refreshToken;
-  await newUser.save();
-
-  // 5️⃣ Return response
-  return {
-    accessToken,
-    refreshToken,
-    user: {
-      id: newUser._id.toString(),
-      name: newUser.name,
-      email: newUser.email,
-      role: newUser.role,
-      organization: newUser.organization || '',
-      premium: newUser.premium,
-    },
-  };
+  return { success: true, message: 'Check your email for OTP!' };
 };
 
 export const signinService = async (email: string, password: string): Promise<AuthResponse> => {
@@ -134,25 +133,47 @@ export const refreshTokenService = async (refreshToken: string): Promise<Refresh
   };
 };
 
-export const requestOtpService = async (
-  email: string,
-  password: string | null,
-  username: string | null,
-  purpose: 'signup' | 'reset',
-) => {
+export const resetPasswordService = async (email: string) => {
+  // Check if user exists
+  const user = await findUserByEmail(email);
+  if (!user) throw new AppError('Invalid email or password', 401);
+
+  // Generate OTP
+  const { otp, otpExpiresAt, otpHash } = await requestOtpService(email, 'reset');
+
+  if (!otp || !otpExpiresAt || !otpHash) {
+    throw new AppError('Error while generating OTP', 500);
+  }
+
+  // Create pending verification
+  await createPending({
+    email,
+    otpHash,
+    otpExpiresAt,
+    purpose: 'reset',
+  });
+
+  // Send email (do not include sensitive info)
+  await sendOtpEmail(email, otp, 'reset');
+
+  return { success: true, message: 'Check your email for OTP!' };
+};
+
+/**
+ * If purpose == signup
+ * return otp
+ */
+export const requestOtpService = async (email: string, purpose: 'signup' | 'reset') => {
   // If purpose signup and user exists, reject (no duplicates)
   if (purpose === 'signup') {
     const existing = await findUserByEmail(email);
     if (existing) throw new AppError('Email already registered', 400);
-    if (!username || !password)
-      throw new AppError('username and password required for signup', 400);
   } else {
     // reset: ensure user exists
     const existing = await findUserByEmail(email);
     if (!existing) throw new AppError('No account found with this email', 404);
   }
 
-  console.log('Checkpoint - 1!');
   // Remove any previous pending for the same email+purpose (so OTP rotates)
   await deletePendingByEmailAndPurpose(email, purpose);
 
@@ -160,25 +181,10 @@ export const requestOtpService = async (
   const otp = generateOtp();
   const otpHash = await hashOtp(otp);
 
-  // For signup, hash the password so we don't store plaintext in pending
-  const hashedPassword = password ? await bcryptHash(password, 10) : null;
-
   const expiresMinutes = Number(env.OTP_EXPIRES_MINUTES || 5);
   const otpExpiresAt = new Date(Date.now() + expiresMinutes * 60 * 1000);
 
-  await createPending({
-    email,
-    username: username || null,
-    hashedPassword,
-    otpHash,
-    purpose,
-    otpExpiresAt,
-  });
-
-  // Send email (do not include sensitive info)
-  await sendOtpEmail(email, otp, purpose);
-
-  return { success: true, message: 'OTP sent to email' };
+  return { otp, otpHash, otpExpiresAt };
 };
 
 export const verifyOtpService = async ({
@@ -204,15 +210,18 @@ export const verifyOtpService = async ({
   if (!isValid) throw new AppError('Invalid OTP', 400);
 
   if (purpose === 'signup') {
-    if (!pending.username || !pending.hashedPassword) {
+    if (!pending.name || !pending.hashedPassword) {
       await deletePendingByEmailAndPurpose(email, 'signup');
       throw new AppError('Incomplete signup data. Please request signup again.', 400);
     }
 
     const newUser = await createUser({
-      name: pending.username,
+      name: pending.name,
       email: pending.email,
       password: pending.hashedPassword,
+      organization: pending.organization,
+      premium: false,
+      role: 'recruiter',
     } as IUser);
 
     await deletePendingByEmailAndPurpose(email, 'signup');

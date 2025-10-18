@@ -3,8 +3,9 @@ import { Types } from 'mongoose';
 
 export const createPending = async (payload: {
   email: string;
-  username?: string | null;
+  name?: string | null;
   hashedPassword?: string | null;
+  organization?: string | null;
   otpHash: string;
   purpose: 'signup' | 'reset';
   otpExpiresAt: Date;

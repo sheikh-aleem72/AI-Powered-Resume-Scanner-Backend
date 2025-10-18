@@ -5,7 +5,8 @@ export type PendingPurpose = 'signup' | 'resetPassword';
 export interface IPendingVerification extends Document {
   email: string;
   // for signup: username + hashedPassword; for reset: these may be undefined
-  username?: string | null;
+  name?: string | null;
+  organization?: string | null;
   hashedPassword?: string | null;
   otpHash: string;
   purpose: PendingPurpose;
@@ -16,7 +17,8 @@ export interface IPendingVerification extends Document {
 const PendingVerificationSchema = new Schema<IPendingVerification>(
   {
     email: { type: String, required: true, lowercase: true, trim: true, index: true },
-    username: { type: String, default: null },
+    name: { type: String, default: null },
+    organization: { type: String, default: null },
     hashedPassword: { type: String, default: null },
     otpHash: { type: String, required: true },
     purpose: { type: String, enum: ['signup', 'reset'], required: true },

@@ -8,7 +8,7 @@ import {
 } from '../../validators/userValidator';
 import {
   refreshTokenController,
-  requestOtpController,
+  resetPasswordController,
   signinController,
   signupController,
   verifyOtpController,
@@ -17,6 +17,7 @@ import { authMiddleware } from '../../middleware/authMiddleware';
 
 const router = express.Router();
 
+// Signup without email-based otp verification
 router.post('/signup', validateRequest(signupSchema), signupController);
 
 router.post('/signin', validateRequest(signinSchema), signinController);
@@ -31,7 +32,7 @@ router.get('/profile', authMiddleware, (req, res) => {
 
 router.post('/refresh-token', refreshTokenController);
 
-router.post('/request-otp', validateRequest(requestOtpSchema), requestOtpController);
+router.post('/reset', validateRequest(requestOtpSchema), resetPasswordController);
 
 router.post('/verify-otp', validateRequest(verifyOtpSchema), verifyOtpController);
 

@@ -1,7 +1,8 @@
-import { Request, Response } from 'express';
+import { Request, response, Response } from 'express';
 import {
   refreshTokenService,
   requestOtpService,
+  resetPasswordService,
   signinService,
   signupService,
   verifyOtpService,
@@ -13,10 +14,7 @@ export const signupController = async (req: Request, res: Response) => {
     const { name, email, password, organization } = req.body;
     const result = await signupService(name, email, password, organization);
 
-    return res.status(201).json({
-      message: 'User created successfully!',
-      data: result,
-    });
+    return res.status(201).json(response);
   } catch (error) {
     // ✅ Handle operational (AppError) errors gracefully
     if (error instanceof AppError) {
@@ -101,11 +99,11 @@ export const refreshTokenController = async (req: Request, res: Response) => {
   }
 };
 
-export const requestOtpController = async (req: Request, res: Response) => {
+export const resetPasswordController = async (req: Request, res: Response) => {
   try {
-    const { email, username, password, purpose } = req.body;
+    const { email } = req.body;
 
-    const response = await requestOtpService(email, password, username, purpose);
+    const response = await resetPasswordService(email);
     return res.status(200).json(response);
   } catch (error) {
     // ✅ Handle operational (AppError) errors gracefully
@@ -117,7 +115,7 @@ export const requestOtpController = async (req: Request, res: Response) => {
     }
 
     // ❌ Handle unexpected errors
-    console.error('Error in requestOtpController:', error);
+    console.error('Error in resetPasswordController:', error);
     return res.status(500).json({
       status: 'error',
       message: 'Something went wrong on our side',

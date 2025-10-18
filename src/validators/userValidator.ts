@@ -17,7 +17,7 @@ export const requestOtpSchema = z.object({
   email: z.string().email(),
   username: z.string().optional(),
   password: z.string().min(6).optional(),
-  purpose: z.enum(['signup', 'reset']),
+  purpose: z.enum(['signup', 'reset']).optional(),
 });
 
 export const verifyOtpSchema = z.object({
