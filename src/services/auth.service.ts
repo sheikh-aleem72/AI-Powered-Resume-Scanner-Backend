@@ -152,6 +152,7 @@ export const requestOtpService = async (
     if (!existing) throw new AppError('No account found with this email', 404);
   }
 
+  console.log('Checkpoint - 1!');
   // Remove any previous pending for the same email+purpose (so OTP rotates)
   await deletePendingByEmailAndPurpose(email, purpose);
 

@@ -1,7 +1,7 @@
 import express from 'express';
 import connectDatabase from './config/dbConfig';
 import { env } from './config/serverConfig';
-import { errorHandler } from './middleware/errorMiddleware';
+// import { errorHandler } from './middleware/errorMiddleware';
 import apiRouter from './routers/api.router';
 
 const app = express();
@@ -9,7 +9,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(errorHandler);
+// app.use(errorHandler);
 
 app.use('/api', apiRouter);
 

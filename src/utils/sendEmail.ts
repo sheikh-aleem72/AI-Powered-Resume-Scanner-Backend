@@ -13,6 +13,10 @@ const transporter = nodemailer.createTransport({
 
 /** send otp mail - simple html/text template */
 export const sendOtpEmail = async (to: string, otp: string, purpose: 'signup' | 'reset') => {
+  transporter.verify((error, success) => {
+    if (error) console.error('SMTP connection failed:', error);
+    else console.log('Server is ready to take messages');
+  });
   const subject = purpose === 'signup' ? 'Your signup verification OTP' : 'Your password reset OTP';
 
   const text = `Your verification code is: ${otp}. It expires in ${env.OTP_EXPIRES_MINUTES} minutes.`;
@@ -20,6 +24,7 @@ export const sendOtpEmail = async (to: string, otp: string, purpose: 'signup' | 
   const html = `<p>Your verification code is: <b>${otp}</b></p>
                 <p>This code will expire in ${env.OTP_EXPIRES_MINUTES} minute(s).</p>`;
 
+  console.log('Checkpoint - 2');
   await transporter.sendMail({
     from: env.SMTP_USER,
     to,
@@ -27,4 +32,6 @@ export const sendOtpEmail = async (to: string, otp: string, purpose: 'signup' | 
     text,
     html,
   });
+
+  console.log('Checkpoint - 3!');
 };
