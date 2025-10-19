@@ -45,13 +45,12 @@ This project focuses on building a **secure, scalable, and maintainable backend*
 
 ### Auth Routes
 
-| Method                          | Endpoint              | Description                                 | Request Body                                                 | Response Body                                           |
-| ------------------------------- | --------------------- | ------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
-| POST                            | `/auth/signup`        | Create pending user & send OTP              | `{ name, email, password, role?, organization? }`            | `{ success: true, message: "OTP sent to email" }`       |
-| POST                            | `/auth/verify-otp`    | Verify OTP and create user / reset password | `{ email, otp, purpose: "signup" \| "reset", newPassword? }` | `{ success: true, accessToken?, refreshToken?, user? }` |
-| POST                            | `/auth/signin`        | User login                                  | `{ email, password }`                                        | `{ success: true, accessToken, refreshToken, user }`    |
-| POST                            | `/auth/refresh-token` | Refresh expired access token                | `{ refreshToken }`                                           | `{ success: true, accessToken, refreshToken }`          |
-| `{ accessToken, refreshToken }` |
+| Method | Endpoint              | Description                                 | Request Body                                                 | Response Body                                           |
+| ------ | --------------------- | ------------------------------------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
+| POST   | `/auth/signup`        | Create pending user & send OTP              | `{ name, email, password, role?, organization? }`            | `{ success: true, message: "OTP sent to email" }`       |
+| POST   | `/auth/verify-otp`    | Verify OTP and create user / reset password | `{ email, otp, purpose: "signup" \| "reset", newPassword? }` | `{ success: true, accessToken?, refreshToken?, user? }` |
+| POST   | `/auth/signin`        | User login                                  | `{ email, password }`                                        | `{ success: true, accessToken, refreshToken, user }`    |
+| POST   | `/auth/refresh-token` | Refresh expired access token                | `{ refreshToken }`                                           | `{ success: true, accessToken, refreshToken }`          |
 
 **Note:** All protected routes require `Authorization: Bearer <accessToken>` header.
 

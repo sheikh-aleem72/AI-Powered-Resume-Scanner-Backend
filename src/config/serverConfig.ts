@@ -14,6 +14,9 @@ interface EnvConfig {
   SMTP_USER: string;
   SMTP_PASS: string;
   OTP_EXPIRES_MINUTES: number;
+  CLOUDINARY_CLOUD_NAME: string;
+  CLOUDINARY_API_SECRET: string;
+  CLOUDINARY_API_KEY: string;
 }
 
 const getEnvVar = (key: string): string => {
@@ -35,4 +38,7 @@ export const env: EnvConfig = {
   SMTP_USER: getEnvVar('SMTP_USER'),
   SMTP_PASS: getEnvVar('SMTP_PASS'),
   OTP_EXPIRES_MINUTES: Number(getEnvVar('OTP_EXPIRES_MINUTES')),
+  CLOUDINARY_API_KEY: getEnvVar('CLOUDINARY_API_KEY'),
+  CLOUDINARY_API_SECRET: getEnvVar('CLOUDINARY_API_SECRET'),
+  CLOUDINARY_CLOUD_NAME: getEnvVar('CLOUDINARY_CLOUD_NAME'),
 };

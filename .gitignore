@@ -36,3 +36,5 @@ coverage/
 *.local
 *.cache
 *.swp
+
+/src/scripts
