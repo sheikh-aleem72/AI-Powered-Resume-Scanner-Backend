@@ -22,7 +22,7 @@ const PendingVerificationSchema = new Schema<IPendingVerification>(
     hashedPassword: { type: String, default: null },
     otpHash: { type: String, required: true },
     purpose: { type: String, enum: ['signup', 'reset'], required: true },
-    otpExpiresAt: { type: Date, required: true, index: true },
+    otpExpiresAt: { type: Date, required: true },
   },
   { timestamps: true },
 );
