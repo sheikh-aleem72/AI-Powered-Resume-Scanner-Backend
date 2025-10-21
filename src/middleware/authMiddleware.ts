@@ -13,11 +13,17 @@ export const authMiddleware = async (req: AuthRequest, res: Response, next: Next
   try {
     // Get token from Authorization header
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new AppError('No token provided', 401);
-    }
+    const customToken = req.headers['x-access-token'] as string | undefined;
 
-    const token = authHeader.split(' ')[1]; // Extract token
+    let token: string | undefined;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (customToken) {
+      token = customToken;
+    } else {
+      throw new AppError('No access token provided', 401);
+    }
 
     // 1️⃣ Verify access token
     let decoded = verifyAccessToken(token!);
