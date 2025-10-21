@@ -11,7 +11,7 @@ import {
 } from '../repositories/pendingVerification.repository';
 import { env } from '../config/serverConfig';
 import { generateOtp, hashOtp, verifyOtpHash } from '../utils/otp';
-import { hash as bcryptHash } from 'bcryptjs';
+import bcrypt, { hash as bcryptHash } from 'bcryptjs';
 import { IPendingVerification } from '../schema/pendingVerification.model';
 
 export interface AuthResponse {
@@ -248,8 +248,11 @@ export const verifyOtpService = async ({
     const user = await findUserByEmail(email);
     if (!user) throw new AppError('User not found', 404);
 
-    user.password = await bcryptHash(newPassword, 10);
+    user.password = newPassword;
+
     await user.save();
+
+    console.log('Password at db: ', user.password);
 
     await deletePendingByEmailAndPurpose(email, 'reset');
 
