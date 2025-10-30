@@ -1,6 +1,7 @@
 // src/controllers/resume.controller.ts
 import { Request as ExRequest, Response, NextFunction } from 'express';
-import { saveResumeService } from '../services/resume.service';
+import { parseAndSaveResumeService, saveResumeService } from '../services/resume.service';
+import { AppError } from '../utils/AppErrors';
 
 interface AuthRequest extends ExRequest {
   user?: {
@@ -8,7 +9,7 @@ interface AuthRequest extends ExRequest {
   };
 }
 
-export const saveResumeController = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const saveResumeController = async (req: AuthRequest, res: Response) => {
   try {
     const { resumes } = req.body;
     const userId = req.user?.id; // assuming you have authMiddleware
@@ -34,6 +35,42 @@ export const saveResumeController = async (req: AuthRequest, res: Response, next
       data: saved,
     });
   } catch (error) {
-    next(error);
+    // ✅ Handle operational (AppError) errors gracefully
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+
+    // ❌ Handle unexpected errors
+    console.error('Error in saveResumeController:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong on our side',
+    });
+  }
+};
+
+export const parseResumeController = async (req: AuthRequest, res: Response) => {
+  try {
+    const { resumeUrl } = req.body;
+    const result = await parseAndSaveResumeService(resumeUrl);
+    return res.status(200).json({ success: true, parsedData: result });
+  } catch (error: any) {
+    // ✅ Handle operational (AppError) errors gracefully
+    if (error instanceof AppError) {
+      return res.status(error.statusCode).json({
+        status: 'error',
+        message: error.message,
+      });
+    }
+
+    // ❌ Handle unexpected errors
+    console.error('Error in parseResumeController:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Something went wrong on our side',
+    });
   }
 };
