@@ -21,6 +21,7 @@ export interface IParsedResume extends Document {
     role?: string;
     startDate?: string;
     endDate?: string;
+    tenure?: string;
     description?: string;
   }[];
 
@@ -104,4 +105,29 @@ const ParsedResumeSchema = new Schema<IParsedResume>(
   { timestamps: true },
 );
 
-export default mongoose.model<IParsedResume>('ParsedResume', ParsedResumeSchema);
+// Add a virtual property to calculate "tenure" for experience
+ParsedResumeSchema.virtual('experience.tenure').get(function (this: IParsedResume) {
+  if (!this.experience) return;
+
+  this.experience.forEach((exp) => {
+    if (exp.startDate) {
+      const start = new Date(exp.startDate);
+      const end = exp.endDate ? new Date(exp.endDate) : new Date();
+
+      if (!isNaN(start.getTime())) {
+        const diffInMs = end.getTime() - start.getTime();
+        const diffInMonths = Math.floor(diffInMs / (1000 * 60 * 60 * 24 * 30));
+        const years = Math.floor(diffInMonths / 12);
+        const months = diffInMonths % 12;
+
+        exp.tenure = years > 0 ? `${years} years ${months} months` : `${months} months`;
+      } else {
+        exp.tenure = 'Fresher';
+      }
+    } else {
+      exp.tenure = 'Fresher';
+    }
+  });
+});
+
+export const ParsedResumeModel = mongoose.model<IParsedResume>('ParsedResume', ParsedResumeSchema);

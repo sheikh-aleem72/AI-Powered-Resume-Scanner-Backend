@@ -11,8 +11,7 @@ import {
 } from '../repositories/pendingVerification.repository';
 import { env } from '../config/serverConfig';
 import { generateOtp, hashOtp, verifyOtpHash } from '../utils/otp';
-import bcrypt, { hash as bcryptHash } from 'bcryptjs';
-import { IPendingVerification } from '../schema/pendingVerification.model';
+import { hash as bcryptHash } from 'bcryptjs';
 
 export interface AuthResponse {
   accessToken: string;
@@ -251,8 +250,6 @@ export const verifyOtpService = async ({
     user.password = newPassword;
 
     await user.save();
-
-    console.log('Password at db: ', user.password);
 
     await deletePendingByEmailAndPurpose(email, 'reset');
 

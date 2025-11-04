@@ -7,7 +7,6 @@ import { IParsedResume } from '../schema/parsedResume.model';
 export const mapParsedResumeData = (parsedData: any): Partial<IParsedResume> => {
   const safeArray = (data: any) => (Array.isArray(data) ? data : []);
   const safeString = (data: any) => (typeof data === 'string' ? data.trim() : '');
-  const safeObject = (data: any) => (typeof data === 'object' && data !== null ? data : {});
 
   return {
     name: safeString(parsedData.name),
@@ -23,13 +22,18 @@ export const mapParsedResumeData = (parsedData: any): Partial<IParsedResume> => 
       description: safeString(edu.description),
     })),
 
-    experience: safeArray(parsedData.experience).map((exp: any) => ({
-      company: safeString(exp.company || exp.organization || exp.name),
-      role: safeString(exp.role || exp.position || exp.designation),
-      startDate: safeString(exp.startDate || exp.from),
-      endDate: safeString(exp.endDate || exp.to),
-      description: safeString(exp.description),
-    })),
+    experience:
+      parsedData.experience[0]?.company ||
+      parsedData.experience[0]?.organization ||
+      parsedData.experience[0]?.name
+        ? safeArray(parsedData.experience).map((exp: any) => ({
+            company: safeString(exp.company || exp.organization || exp.name),
+            role: safeString(exp.role || exp.position || exp.designation),
+            startDate: safeString(exp.startDate || exp.from),
+            endDate: safeString(exp.endDate || exp.to),
+            description: safeString(exp.description),
+          }))
+        : [],
 
     projects: safeArray(parsedData.projects).map((proj: any) => ({
       name: safeString(proj.name),

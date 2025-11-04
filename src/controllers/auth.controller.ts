@@ -1,7 +1,6 @@
-import { Request, response, Response } from 'express';
+import { Request, Response } from 'express';
 import {
   refreshTokenService,
-  requestOtpService,
   resetPasswordService,
   signinService,
   signupService,
@@ -14,7 +13,7 @@ export const signupController = async (req: Request, res: Response) => {
     const { name, email, password, organization } = req.body;
     const result = await signupService(name, email, password, organization);
 
-    return res.status(201).json(response);
+    return res.status(201).json(result);
   } catch (error) {
     // ✅ Handle operational (AppError) errors gracefully
     if (error instanceof AppError) {

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { env } from '../config/serverConfig';
 
-const FASTAPI_URL = env.PARSER_SERVICE_URL || 'http://localhost:8000/api/parse/';
+const FASTAPI_URL = `${env.PARSER_SERVICE_URL}/parse/` || 'http://localhost:8000/api/parse/';
 
 export const parseResume = async (resumeUrl: string) => {
   try {

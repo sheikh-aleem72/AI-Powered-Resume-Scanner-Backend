@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 /** send otp mail - simple html/text template */
 export const sendOtpEmail = async (to: string, otp: string, purpose: 'signup' | 'reset') => {
-  transporter.verify((error, success) => {
+  transporter.verify((error) => {
     if (error) console.error('SMTP connection failed:', error);
     else console.log('SMTP Server is ready to take messages');
   });

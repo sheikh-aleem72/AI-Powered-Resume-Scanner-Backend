@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
-import * as service from '../services/resumeAnalysis.service';
+import { Request, Response } from 'express';
+import * as service from '../services/analysis.service';
 import { AppError } from '../utils/AppErrors';
 
 export const createAnalysis = async (req: Request, res: Response) => {

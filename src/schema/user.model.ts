@@ -35,12 +35,10 @@ const userSchema: Schema<IUser> = new Schema(
 
 // 3️⃣ Pre-save hook to hash password
 userSchema.pre<IUser>('save', async function (next) {
-  console.log('Pre save function is getting called!');
   if (!this.isModified('password')) return next();
 
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
-  console.log('Inside user schema Hash 1:', this.password);
   next();
 });
 

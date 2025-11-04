@@ -1,6 +1,5 @@
-// src/controllers/resume.controller.ts
-import { Request as ExRequest, Response, NextFunction } from 'express';
-import { parseAndSaveResumeService, saveResumeService } from '../services/resume.service';
+import { Request as ExRequest, Response } from 'express';
+import { saveResumeService } from '../services/resume.service';
 import { AppError } from '../utils/AppErrors';
 
 interface AuthRequest extends ExRequest {
@@ -44,30 +43,7 @@ export const saveResumeController = async (req: AuthRequest, res: Response) => {
     }
 
     // ❌ Handle unexpected errors
-    console.error('Error in saveResumeController:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Something went wrong on our side',
-    });
-  }
-};
-
-export const parseResumeController = async (req: AuthRequest, res: Response) => {
-  try {
-    const { resumeUrl } = req.body;
-    const result = await parseAndSaveResumeService(resumeUrl);
-    return res.status(200).json({ success: true, parsedData: result });
-  } catch (error: any) {
-    // ✅ Handle operational (AppError) errors gracefully
-    if (error instanceof AppError) {
-      return res.status(error.statusCode).json({
-        status: 'error',
-        message: error.message,
-      });
-    }
-
-    // ❌ Handle unexpected errors
-    console.error('Error in parseResumeController:', error);
+    console.error('Error in saveResumeController:');
     return res.status(500).json({
       status: 'error',
       message: 'Something went wrong on our side',

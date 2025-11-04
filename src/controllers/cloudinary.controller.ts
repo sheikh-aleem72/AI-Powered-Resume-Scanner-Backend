@@ -2,7 +2,6 @@ import { Request, Response } from 'express';
 import { AppError } from '../utils/AppErrors';
 import cloudinary from '../config/cloudinary.config';
 import { env } from '../config/serverConfig';
-import { success } from 'zod';
 
 export const getPresignedUrls = async (req: Request, res: Response) => {
   try {

@@ -1,4 +1,4 @@
-import { Request as ExRequest, Response, NextFunction } from 'express';
+import { Request as ExRequest, Response } from 'express';
 import * as service from '../services/job.service';
 import { AppError } from '../utils/AppErrors';
 
